@@ -57,23 +57,20 @@ static NSString * const DIRECT_DEEPLINK_CALLBACK_NAME = @"adj-direct-deeplink";
 #pragma mark - iOS app lifecycle methods
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    NSURL *launchUrl = launchOptions[UIApplicationLaunchOptionsURLKey];
-    [self processCapturedDeeplinkWithUrl:launchUrl referrer:nil];
-
-    NSDictionary *userActivityDictionary = launchOptions[UIApplicationLaunchOptionsUserActivityDictionaryKey];
-    NSUserActivity *userActivity = nil;
-    for (id value in [userActivityDictionary allValues]) {
-        if ([value isKindOfClass:[NSUserActivity class]]) {
-            userActivity = (NSUserActivity *)value;
-            break;
-        }
-    }
-    if ([self isFieldValid:userActivity]
-        && [userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-        [self processCapturedDeeplinkWithUrl:userActivity.webpageURL referrer:userActivity.referrerURL];
-    }
-
-    return NO;
+    // Intentionally does not read launch URLs here.
+    //
+    // Flutter's FlutterPluginAppLifeCycleDelegate aggregates this selector with
+    // veto semantics: if any plugin returns NO, the aggregator short-circuits
+    // and returns NO to UIKit, which then skips the follow-up calls to
+    // application:openURL:options: and application:continueUserActivity:
+    // restorationHandler:. Other plugins that rely on those follow-up calls
+    // (e.g. app_links) would never observe the launch URL.
+    //
+    // Returning YES lets UIKit dispatch the launch URL through the normal
+    // openURL / continueUserActivity paths below, which already route into
+    // processCapturedDeeplinkWithUrl: for this plugin and also allow any
+    // other registered plugins to observe the event.
+    return YES;
 }
 
 - (BOOL)application:(UIApplication *)application
